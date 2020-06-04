@@ -8,18 +8,23 @@ using UnityEngine;
 
 namespace Tahvohck_Mods.JPFariasUpdates
 {
-    class CameraOverhaul
+    public class CameraOverhaul
     {
         private readonly static Harmony harmInst = new Harmony(typeof(CameraOverhaul).FullName);
+        public static CustomCameraManager camera;
 
         public static void Init()
         {
-            harmInst.PatchAll();
+            try {
+                harmInst.PatchAll();
+            } catch (Exception e) {
+                Debug.Log(e.Message);
+            }
         }
     }
 
 
-    public abstract class CustomCameraManager : CameraManager
+    public class CustomCameraManager : CameraManager
     {
         // These are not const so other mods can change them if they want
         public static float MIN_HEIGHT = 12f;
@@ -37,7 +42,9 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         protected static int Modulesize = 0;
         protected static bool IsPlacingModule = false;
-        private float ZoomAxis;
+        private static float ZoomAxis;
+
+        private static int Diffcheck = 0;
 
         // Taken directly from the source code but then made into a public property.
         protected const float _TGenTotalSize = 2000f;
@@ -52,6 +59,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static readonly float FactorSpeedZoom = 60f;
         protected static readonly float FactorSpeedLateral = 80f;
         protected static readonly float FactorSpeedRotation = 120f;
+        protected static readonly float MinRotationalElevation = 20f;
+        protected static readonly float MaxRotationalElevation = 87f;
 
         // Fields that are private in CameraManager
         protected static Vector3 mAcceleration = Vector3.zero;  // TODO: Update assignment
@@ -59,13 +68,117 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static float mTargetHeight;                   // TODO: Might not need this
         protected static float mRotationAcceleration;           // TODO: Get from somewhere
         protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
+        protected static bool mLocked;                          // TODO: Get from somewhere
 
         public new void update(float timeStep)
         {
+            if (ZoomAxis == 0f) { ZoomAxis = Input.GetAxis("Zoom"); }
+
+            GameState gameState = GameManager.getInstance().getGameState();
+            // Substitue true if gamestate is null via null fallback
+            if (!(gameState?.isCameraFixed() ?? true)) {
+                if (isCinematic()) {
+                    updateCinematic(timeStep);
+                } else {
+                    GameStateGame game = gameState as GameStateGame;
+                    if (game.CurrentState() == GameStateHelper.Mode.PlacingModule && IsPlacingModule) {
+                        /* TODO: Determine if this is needed. The game source doesn't include this.
+                         * It's used later on to actually work with the module size and I don't
+                         * think that that does much in here. It looks like the same code gets run in
+                         * GameStateGame.updateUI() as well, so this might have been imported from an older
+                         * version of the source code without that method.
+                         * */
+                        // game.mCurrentModuleSize = mModuleSize
+                    }
+
+                    Transform transform = getCamera().transform;
+
+                    float xAxisAccel = mAcceleration.x;
+                    float yAxisAccel = mAcceleration.y;
+                    float zAxisAccel = mAcceleration.z;
+                    float xAxisAccelAbsolute = Mathf.Abs(mAcceleration.x);
+                    float yAxisAccelAbsolute = Mathf.Abs(mAcceleration.y);
+                    float zAxisAccelAbsolute = Mathf.Abs(mAcceleration.z);
+
+                    if (!mLocked) {
+
+
+                        // Zoom control
+                        if (yAxisAccelAbsolute > thresholdMovementY) {
+                            float speed = Mathf.Clamp(
+                                FactorSpeedZoom * timeStep,
+                                MinSpeedLinear, MaxSpeedLinear);
+                            float newHeight = Mathf.Clamp(
+                                mCurrentHeight + yAxisAccel * speed,
+                                MIN_HEIGHT, MAX_HEIGHT);
+
+                            // Dunno what the 86f constant is for. It was in JPF's code but it's not in source.
+                            // TODO: Quaternions instead?
+                            if (transform.eulerAngles.x < 86f) {
+                                zAxisAccel += (mCurrentHeight - newHeight) / speed;
+                                zAxisAccelAbsolute = Mathf.Abs(zAxisAccel);
+                            }
+
+                            mCurrentHeight = newHeight;
+                            mTargetHeight = mCurrentHeight;
+                        }
+
+                        // Forward movement
+                        if (zAxisAccelAbsolute > thresholdMovementXZ) {
+                            transform.position +=
+                                transform.forward.normalized * zAxisAccel * timeStep * FactorSpeedLateral;
+                        }
+
+                        // Sideways movement
+                        if (xAxisAccelAbsolute > thresholdMovementXZ) {
+                            transform.position +=
+                                transform.right.normalized * xAxisAccel * timeStep * FactorSpeedLateral;
+                        }
+
+                        // Rotation
+                        if (mRotationAcceleration > thresholdRotation ||
+                            mVerticalRotationAcceleration > thresholdRotation) {
+                            // Example for clamps: Euler.x is 50f
+                            // min clamp: 20 - 50 => -30
+                            // max clamp: 87 - 50 =>  37
+                            float minClamp = MinRotationalElevation - transform.eulerAngles.x;
+                            float maxClamp = MaxRotationalElevation - transform.eulerAngles.x;
+                            float xDelta = -(mVerticalRotationAcceleration * timeStep * FactorSpeedRotation);
+                            float yDelta = mRotationAcceleration * timeStep * FactorSpeedRotation;
+
+                            // Constrain elevation adjustment
+                            xDelta = Mathf.Clamp(xDelta, minClamp, maxClamp);
+
+                            transform.eulerAngles += new Vector3(xDelta, yDelta);
+                        }
+                    } else if (yAxisAccelAbsolute > thresholdMovementY ) {
+                        //float speed = Mathf.Clamp(FactorSpeedZoom * timeStep, MinSpeedLinear, MaxSpeedLinear);
+                        //Vector3 movement = transform.forward;
+                        //
+                    }
+                }
+            }
+        }
 
         public new void fixedUpdate(float timeStep, int frameIndex)
         {
 
+        }
+    }
+
+
+    [HarmonyPatch(typeof(CameraManager), "update")]
+    public class PatchCamera
+    {
+        public static bool Prefix(float timeStep)
+        {
+            // We call this here instead of in CameraOverhaul.Init because this ensures that it's loaded
+            // lazily; most importantly it ensures that the game is READY to instantiate it.
+            if (CameraOverhaul.camera is null) {
+                CameraOverhaul.camera = new CustomCameraManager();
+            }
+            CameraOverhaul.camera.update(timeStep);
+            return true;
         }
     }
 }
