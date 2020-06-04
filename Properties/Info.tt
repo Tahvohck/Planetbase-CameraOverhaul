@@ -6,6 +6,7 @@
     "Author":       "Tahvohck",
     "Version":      "<#= this.version #>.<#= this.buildID #>",
 
-    "EntryPoint":   "Tahvohck_Mods.JPFariasUpdates.CameraOverhaul.Init",
-    "DisplayName":  "Camera Controls Overhaul"
+    "EntryMethod":  "Tahvohck_Mods.JPFariasUpdates.CameraOverhaul.Init",
+    "DisplayName":  "Camera Controls Overhaul",
+    "AssemblyName": "CameraOverhaul.dll"
 }
