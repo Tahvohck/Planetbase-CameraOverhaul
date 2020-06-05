@@ -167,7 +167,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
             }
         }
 
-        public new void fixedUpdate(float timeStep, int frameIndex)
+        public void fixedUpdate(float timeStep, int frameIndex)
         {
 
         }
