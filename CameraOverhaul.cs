@@ -107,6 +107,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     float yAxisAccelAbsolute = Mathf.Abs(mAcceleration.y);
                     float zAxisAccelAbsolute = Mathf.Abs(mAcceleration.z);
 
+                    #region mLocked else if absY > threshold
                     if (!mLocked) {
 
 
@@ -161,9 +162,29 @@ namespace Tahvohck_Mods.JPFariasUpdates
                             transform.eulerAngles += new Vector3(xDelta, yDelta);
                         }
                     } else if (yAxisAccelAbsolute > thresholdMovementY ) {
-                        //float speed = Mathf.Clamp(FactorSpeedZoom * timeStep, MinSpeedLinear, MaxSpeedLinear);
-                        //Vector3 movement = transform.forward;
-                        //
+                        // TODO: Understand this whole segment
+                        float speed = Mathf.Clamp(FactorSpeedZoom * timeStep, MinSpeedLinear, MaxSpeedLinear);
+                        Vector3 movement = transform.forward * speed * -yAxisAccel;
+
+                        Construction selected = Selection.getSelectedConstruction();
+                        Vector3 planePoint = selected.getPosition();
+                        planePoint.y = yAxisAccel < 0f ? 4f : selected.getRadius() + 10f;
+                        Plane plane = new Plane(Vector3.up, planePoint);
+
+                        // Ray goes forward if accel is negative, otherwise it goes backwards???
+                        Ray ray = new Ray(
+                            transform.position,
+                            yAxisAccel < 0f ? transform.forward : -transform.forward);
+                        float dist;
+                        if (plane.Raycast(ray, out dist)) {
+                            if (dist < movement.magnitude) {
+                                movement *= dist / movement.magnitude;
+                            }
+
+                            transform.position += movement;
+                        }
+                    }
+                    #endregion
                     }
                 }
             }
