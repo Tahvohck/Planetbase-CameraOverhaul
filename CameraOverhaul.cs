@@ -145,6 +145,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         // Rotation
                         if (mRotationAcceleration > thresholdRotation ||
                             mVerticalRotationAcceleration > thresholdRotation) {
+                            // This is different from how JPF did it, as I'm trying to not alter the euler
+                            // angles directly per Unity docs, doing it instead via a vector.
                             // Example for clamps: Euler.x is 50f
                             // min clamp: 20 - 50 => -30
                             // max clamp: 87 - 50 =>  37
