@@ -63,6 +63,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static readonly float FactorSpeedRotation = 120f;
         protected static readonly float MinRotationalElevation = 20f;
         protected static readonly float MaxRotationalElevation = 87f;
+        protected static readonly float MaxDistFromMapCenter = Mathf.Min(375f, TGenTotalSize / 2.0f);
 
         // Fields that are private in CameraManager
         protected static Vector3 mAcceleration = Vector3.zero;  // TODO: Update assignment
@@ -185,6 +186,35 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         }
                     }
                     #endregion
+
+                    // Rotate around world
+                    if (Mathf.Abs(AlternateRotationAcceleration) > thresholdRotation) {
+                        Ray ray = new Ray(transform.position, transform.forward);
+                        float dist;
+                        if (GroundPlane.Raycast(ray, out dist)) {
+                            transform.RotateAround(
+                                transform.position + transform.forward * dist,
+                                Vector3.up,
+                                AlternateRotationAcceleration * timeStep * FactorSpeedRotation);
+                        }
+                    }
+
+                    // If we moved, set the correct height
+                    if (!mLocked && (
+                        zAxisAccelAbsolute > thresholdMovementXZ ||
+                        xAxisAccelAbsolute > thresholdMovementXZ ||
+                        yAxisAccelAbsolute > thresholdMovementY)) {
+                        _Manager.placeOnFloor(mCurrentHeight);
+                    }
+
+                    // Calc map center and distance
+                    Vector3 mapCenter = new Vector3(TGenTotalSize, 0f, TGenTotalSize) * 0.5f;
+                    Vector3 mapCenterToCam = transform.position - mapCenter;
+                    float distToMapCenter = mapCenterToCam.magnitude;
+
+                    // limit camera bounds on map
+                    if (distToMapCenter > MaxDistFromMapCenter) {
+                        transform.position = mapCenter + mapCenterToCam.normalized * MaxDistFromMapCenter;
                     }
                 }
             }
