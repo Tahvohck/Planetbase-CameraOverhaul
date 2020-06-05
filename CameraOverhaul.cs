@@ -84,6 +84,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
             GameState gameState = GameManager.getInstance().getGameState();
             // Substitue true if gamestate is null via null fallback
+            // Only run if camera is NOT fixed and if gamestate is NOT null
             if (!(gameState?.isCameraFixed() ?? true)) {
                 if (_Manager.isCinematic()) {
                     _Manager.updateCinematic(timeStep);
