@@ -24,7 +24,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
     }
 
 
-    public class CustomCameraManager : CameraManager
+    public class CustomCameraManager
     {
         // These are not const so other mods can change them if they want
         public static float MIN_HEIGHT = 12f;
@@ -45,6 +45,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
         private static float ZoomAxis;
 
         private static int Diffcheck = 0;
+
+        private static CameraManager _Manager;
 
         // Taken directly from the source code but then made into a public property.
         protected const float _TGenTotalSize = 2000f;
@@ -70,15 +72,20 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
         protected static bool mLocked;                          // TODO: Get from somewhere
 
-        public new void update(float timeStep)
+        public CustomCameraManager()
+        {
+            _Manager = CameraManager.getInstance();
+        }
+
+        public void update(float timeStep)
         {
             if (ZoomAxis == 0f) { ZoomAxis = Input.GetAxis("Zoom"); }
 
             GameState gameState = GameManager.getInstance().getGameState();
             // Substitue true if gamestate is null via null fallback
             if (!(gameState?.isCameraFixed() ?? true)) {
-                if (isCinematic()) {
-                    updateCinematic(timeStep);
+                if (_Manager.isCinematic()) {
+                    _Manager.updateCinematic(timeStep);
                 } else {
                     GameStateGame game = gameState as GameStateGame;
                     if (game.CurrentState() == GameStateHelper.Mode.PlacingModule && IsPlacingModule) {
@@ -91,7 +98,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         // game.mCurrentModuleSize = mModuleSize
                     }
 
-                    Transform transform = getCamera().transform;
+                    Transform transform = _Manager.getCamera().transform;
 
                     float xAxisAccel = mAcceleration.x;
                     float yAxisAccel = mAcceleration.y;
@@ -112,7 +119,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                                 mCurrentHeight + yAxisAccel * speed,
                                 MIN_HEIGHT, MAX_HEIGHT);
 
-                            // Dunno what the 86f constant is for. It was in JPF's code but it's not in source.
+                            // Constant is an upper bound on the camera elevation angle
                             // TODO: Quaternions instead?
                             if (transform.eulerAngles.x < 86f) {
                                 zAxisAccel += (mCurrentHeight - newHeight) / speed;
