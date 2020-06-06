@@ -32,8 +32,6 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         // Protected instead of private - Can be accessed by subclasses
         protected static float VerticalRotationAcceleration = 0f;
-        protected static float PreviousMouseY = 0f;
-
         protected static float AlternateRotationAcceleration = 0f;
 
         protected static Plane GroundPlane = new Plane(
@@ -72,6 +70,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static float mRotationAcceleration;           // TODO: Get from somewhere
         protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
         protected static float mZoomAxis = 0f;                  // Only altered by Update and FixedUpdate
+        protected static float mPreviousMouseX = 0f;            // Only altered by FixedUpdate
+        protected static float mPreviousMouseY = 0f;            // Only altered by FixedUpdate
         protected static bool mLocked;                          // TODO: Get from somewhere
 
         public CustomCameraManager()
@@ -243,20 +243,110 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
                 // Camera is unfixed and game isn't paused.
                 if (!(gameState?.isCameraFixed() ?? true) && TimeManager.getInstance().isPaused()) {
+                    // Setup
                     KeyBindingManager bindingManager = KeyBindingManager.getInstance();
                     GameStateGame game = gameState as GameStateGame;
+                    float axisCompositeZoom = Mathf.Abs(bindingManager.getCompositeAxis(
+                        ActionType.CameraZoomOut, ActionType.CameraZoomIn));
+                    float axisCompositeLR = Mathf.Abs(bindingManager.getCompositeAxis(
+                        ActionType.CameraMoveLeft, ActionType.CameraMoveRight));
+                    float axisCompositeFB = Mathf.Abs(bindingManager.getCompositeAxis(
+                        ActionType.CameraMoveBack, ActionType.CameraMoveForward));
+                    bool ctrlButtonPressed =
+                        Input.GetKey(KeyCode.LeftControl) &&
+                        Input.GetKey(KeyCode.RightControl);
 
+                    // Runs if we're placing a module
                     if (game.CurrentState() == GameStateHelper.Mode.PlacingModule) {
                         if (!IsPlacingModule) {
                             IsPlacingModule = true;
                             // TODO: Get this, maybe. See above in update()
                             // Modulesize = game.mCurrentModuleSize;
                         }
+
+                        // Size adjustment code (JPF called this zoom code)
+                        if (Mathf.Abs(mZoomAxis) > thresholdMovementXZ
+                            || axisCompositeZoom > thresholdMovementXZ) {
+                            // Adjust module size as needed IF the control keys are down.
+                            if (ctrlButtonPressed) {
+                                // This does not match JPF's code. In a way it's a bit more elegant, but in
+                                // a different way it's a hack.
+                                int sizeAdjust = (int)Mathf.Sign(axisCompositeZoom);
+                                bool justUp = bindingManager.getBinding(ActionType.CameraZoomOut).justUp()
+                                    && bindingManager.getBinding(ActionType.CameraZoomIn).justUp();
+                                if (justUp && Modulesize >= 0 && Modulesize <= 4) {
+                                    Modulesize += sizeAdjust;
+                                }
+                            }
+                        }
+
+                        // game.mCurrentModuleSize = Modulesize
                     } else {
                         // TODO: Maybe I don't need this. I should be able to trust the gamestate instead.
                         IsPlacingModule = false;
                     }
+
+                    mAcceleration.x += axisCompositeLR * lateralMoveSpeed;
+                    mAcceleration.z += axisCompositeFB * lateralMoveSpeed;
+
+                    if (!ctrlButtonPressed) {
+                        mAcceleration.y -= mZoomAxis * zoomAndRotationSpeed;
+                        mAcceleration.y -= axisCompositeZoom * zoomAndRotationSpeed;
+                    }
+
+                    AlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
+
+                    // Rotate with middle mouse button
+                    // TODO: Can probably use a Vector2 here
+                    if (Input.GetMouseButton(2)) {
+                        float mouseDeltaX = Input.mousePosition.x - mPreviousMouseX;
+                        float mouseDeltaY = Input.mousePosition.y - mPreviousMouseY;
+
+                        if (Mathf.Abs(mouseDeltaX) != Mathf.Epsilon) {
+                            mRotationAcceleration += zoomAndRotationSpeed * mouseDeltaX * 0.1f;
+                        }
+                        if (Mathf.Abs(mouseDeltaY) != Mathf.Epsilon) {
+                            mVerticalRotationAcceleration += zoomAndRotationSpeed * mouseDeltaY * 0.1f;
+                        }
+                    }
+
+                    // Move with mouse on screen borders
+                    if (!Application.isEditor) {
+                        float screenBorderWidth = Screen.height * 0.01f;
+                        if (Input.mousePosition.x < screenBorderWidth) {
+                            mAcceleration.x -= lateralMoveSpeed;
+                        } else if (Input.mousePosition.x > Screen.width - screenBorderWidth) {
+                            mAcceleration.x += lateralMoveSpeed;
+                        } else if (Input.mousePosition.y < screenBorderWidth) {
+                            mAcceleration.z -= lateralMoveSpeed;
+                        } else if (Input.mousePosition.y > Screen.height - screenBorderWidth) {
+                            mAcceleration.z += lateralMoveSpeed;
+                        }
+                    }
+
+                    // Unlike JPF, I define a reusable function here because it reads better.
+                    float clampSpeed = !Input.GetKey(KeyCode.LeftShift) ? 1f : 0.25f;
+                    Clamp(ref mAcceleration.x, lateralMoveSpeed);
+                    Clamp(ref mAcceleration.z, lateralMoveSpeed);
+                    Clamp(ref mAcceleration.y, zoomAndRotationSpeed);
+                    Clamp(ref mRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref mVerticalRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref AlternateRotationAcceleration, zoomAndRotationSpeed);
+
+                    // Said reusable function
+                    void Clamp(ref float num, float mult)
+                    {
+                        num = Mathf.Clamp(num - num * mult, -clampSpeed, clampSpeed);
+                    }
+                } else {
+                    mAcceleration = Vector3.zero;
+                    mRotationAcceleration = 0f;
+                    mVerticalRotationAcceleration = 0f;
+                    AlternateRotationAcceleration = 0f;
                 }
+
+                mPreviousMouseX = Input.mousePosition.x;
+                mPreviousMouseY = Input.mousePosition.y;
             }
         }
     }
