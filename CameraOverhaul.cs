@@ -63,7 +63,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         // Backing fields
         // Using a vector instead of the base/JPF method of fields
-        protected static Vector2 PreviousMouse = new Vector2();
+        protected static Vector3 PreviousMouse = new Vector3();
 
         // Constants
         protected static readonly float thresholdMovementY = 0.01f;
@@ -314,10 +314,10 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     // Rotate with middle mouse button
                     // TODO: Can probably use a Vector2 here
                     if (Input.GetMouseButton(2)) {
-                        Vector2 deltaMouse = (Vector2)Input.mousePosition - PreviousMouse;
+                        Vector3 deltaMouse = Input.mousePosition - PreviousMouse;
 
                         if (Mathf.Abs(deltaMouse.magnitude) > Mathf.Epsilon) {
-                            Vector2 adjustedDelta = deltaMouse * zoomAndRotationSpeed * 0.1f;
+                            Vector3 adjustedDelta = deltaMouse * zoomAndRotationSpeed * 0.1f;
                             RotationAcceleration = adjustedDelta.x;
                             VerticalRotationAcceleration = adjustedDelta.y;
                         }
