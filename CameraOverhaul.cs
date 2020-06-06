@@ -222,6 +222,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
             }
 
             // TODO: Interpolation, will need reflection
+            // TODO: Skydome rotation
         }
 
         public void fixedUpdate(float timeStep, int frameIndex)
