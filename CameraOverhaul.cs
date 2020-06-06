@@ -353,7 +353,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
 
     [HarmonyPatch(typeof(CameraManager), "update")]
-    public class PatchCamera
+    public class PatchCameraUpdate
     {
         public static bool Prefix(float timeStep)
         {
@@ -363,7 +363,23 @@ namespace Tahvohck_Mods.JPFariasUpdates
                 CameraOverhaul.camera = new CustomCameraManager();
             }
             CameraOverhaul.camera.update(timeStep);
-            return true;
+            return false;
+        }
+    }
+
+
+    [HarmonyPatch(typeof(CameraManager), "fixedUpdate")]
+    public class PatchCameraFixedUpdate
+    {
+        public static bool Prefix(float timeStep, int frameIndex)
+        {
+            // We call this here instead of in CameraOverhaul.Init because this ensures that it's loaded
+            // lazily; most importantly it ensures that the game is READY to instantiate it.
+            if (CameraOverhaul.camera is null) {
+                CameraOverhaul.camera = new CustomCameraManager();
+            }
+            CameraOverhaul.camera.fixedUpdate(timeStep, frameIndex);
+            return false;
         }
     }
 }
