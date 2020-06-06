@@ -44,8 +44,6 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static bool IsPlacingModule = false;
         private static float ZoomAxis;
 
-        private static int Diffcheck = 0;
-
         private static CameraManager _Manager;
 
         // Taken directly from the source code but then made into a public property.
