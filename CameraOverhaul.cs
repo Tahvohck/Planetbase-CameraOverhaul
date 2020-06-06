@@ -65,7 +65,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         // Fields that are private in CameraManager
         protected static Vector3 mAcceleration = Vector3.zero;  // TODO: Update assignment
-        protected static float mCurrentHeight;                  // TODO: Update assignment
+        protected static float mCurrentHeight = 21f;            // TODO: Update assignment
         protected static float mTargetHeight;                   // TODO: Might not need this
         protected static float mRotationAcceleration;           // TODO: Get from somewhere
         protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
