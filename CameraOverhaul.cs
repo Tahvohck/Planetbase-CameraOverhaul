@@ -32,7 +32,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         public static float MAX_HEIGHT = 120f;
 
         // Protected instead of private - Can be accessed by subclasses
-        protected static float AlternateRotationAcceleration = 0f;
+        protected static float OrbitRotationAcceleration = 0f;
 
         protected static Plane GroundPlane = new Plane(
             Vector3.up,
@@ -204,14 +204,14 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     #endregion
 
                     // Rotate around world
-                    if (Mathf.Abs(AlternateRotationAcceleration) > thresholdRotation) {
+                    if (Mathf.Abs(OrbitRotationAcceleration) > thresholdRotation) {
                         Ray ray = new Ray(transform.position, transform.forward);
                         float dist;
                         if (GroundPlane.Raycast(ray, out dist)) {
                             transform.RotateAround(
                                 transform.position + transform.forward * dist,
                                 Vector3.up,
-                                AlternateRotationAcceleration * timeStep * FactorSpeedRotation);
+                                OrbitRotationAcceleration * timeStep * FactorSpeedRotation);
                         }
                     }
 
@@ -309,7 +309,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         Acceleration.y -= axisCompositeZoom * zoomAndRotationSpeed;
                     }
 
-                    AlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
+                    OrbitRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
 
                     // Rotate with middle mouse button
                     // TODO: Can probably use a Vector2 here
@@ -346,7 +346,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     Clamp(ref Acceleration.y, zoomAndRotationSpeed);
                     Clamp(ref RotationAcceleration, zoomAndRotationSpeed);
                     Clamp(ref VerticalRotationAcceleration, zoomAndRotationSpeed);
-                    Clamp(ref AlternateRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref OrbitRotationAcceleration, zoomAndRotationSpeed);
 
                     if (sign != Mathf.Sign(Acceleration.x)) {
                         Debug.Log($"SIGN DID NOT MATCH: {sign}, {Acceleration.x.ToString("F3")}");
@@ -365,7 +365,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     Acceleration = Vector3.zero;
                     RotationAcceleration = 0f;
                     VerticalRotationAcceleration = 0f;
-                    mAlternateRotationAcceleration = 0f;
+                    OrbitRotationAcceleration = 0f;
                 }
 
                 PreviousMouseX = Input.mousePosition.x;
