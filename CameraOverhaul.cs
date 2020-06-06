@@ -26,13 +26,13 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
     public class CustomCameraManager
     {
+        #region Properties and Fields
         // These are not const so other mods can change them if they want
         public static float MIN_HEIGHT = 12f;
         public static float MAX_HEIGHT = 120f;
 
         // Protected instead of private - Can be accessed by subclasses
-        protected static float VerticalRotationAcceleration = 0f;
-        protected static float mAlternateRotationAcceleration = 0f;
+        protected static float AlternateRotationAcceleration = 0f;
 
         protected static Plane GroundPlane = new Plane(
             Vector3.up,
@@ -40,13 +40,30 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         protected static int Modulesize = 0;
         protected static bool IsPlacingModule = false;
-        private static float ZoomAxis;
 
         private static CameraManager _Manager;
 
         // Taken directly from the source code but then made into a public property.
         protected const float _TGenTotalSize = 2000f;
         public static float TGenTotalSize => _TGenTotalSize;
+
+        // Lots of properties. I should sort these.
+        [Obsolete("Use PreviousMouse vector instead")]
+        protected static float PreviousMouseX { get => PreviousMouse.x; set => PreviousMouse.x = value; }
+        [Obsolete("Use PreviousMouse vector instead")]
+        protected static float PreviousMouseY { get => PreviousMouse.y; set => PreviousMouse.y = value; }
+
+        protected static float CurrentHeight
+        {
+            get => _CurrentHeight;
+            set {
+                _CurrentHeight = Mathf.Clamp(value, MIN_HEIGHT, MAX_HEIGHT);
+            }
+        }
+
+        // Backing fields
+        // Using a vector instead of the base/JPF method of fields
+        protected static Vector2 PreviousMouse = new Vector2();
 
         // Constants
         protected static readonly float thresholdMovementY = 0.01f;
@@ -63,16 +80,15 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static readonly float MaxRotationalElevation = 87f;
         protected static readonly float MaxDistFromMapCenter = Mathf.Min(375f, TGenTotalSize / 2.0f);
 
-        // Fields that are private in CameraManager
-        protected static Vector3 mAcceleration = Vector3.zero;  // TODO: Update assignment
-        protected static float mCurrentHeight = 21f;            // TODO: Update assignment
-        protected static float mTargetHeight;                   // TODO: Might not need this
-        protected static float mRotationAcceleration;           // TODO: Get from somewhere
-        protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
-        protected static float mZoomAxis = 0f;                  // Only altered by Update and FixedUpdate
-        protected static float mPreviousMouseX = 0f;            // Only altered by FixedUpdate
-        protected static float mPreviousMouseY = 0f;            // Only altered by FixedUpdate
-        protected static bool mLocked;                          // TODO: Get from somewhere
+        // Fields that are private in CameraManager (mild renaming)
+        protected static Vector3 Acceleration = Vector3.zero;   // TODO: Update assignment
+        protected static float _CurrentHeight = 21f;            // TODO: Update assignment
+        protected static float TargetHeight;                    // TODO: Might not need this
+        protected static float RotationAcceleration;            // TODO: Get from somewhere
+        protected static float VerticalRotationAcceleration;    // TODO: Get from somewhere
+        protected static float ZoomAxis = 0f;                   // Only altered by Update and FixedUpdate
+        protected static bool Locked;                           // TODO: Get from somewhere
+        #endregion
 
         public CustomCameraManager()
         {
@@ -103,15 +119,15 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
                     Transform transform = _Manager.getCamera().transform;
 
-                    float xAxisAccel = mAcceleration.x;
-                    float yAxisAccel = mAcceleration.y;
-                    float zAxisAccel = mAcceleration.z;
-                    float xAxisAccelAbsolute = Mathf.Abs(mAcceleration.x);
-                    float yAxisAccelAbsolute = Mathf.Abs(mAcceleration.y);
-                    float zAxisAccelAbsolute = Mathf.Abs(mAcceleration.z);
+                    float xAxisAccel = Acceleration.x;
+                    float yAxisAccel = Acceleration.y;
+                    float zAxisAccel = Acceleration.z;
+                    float xAxisAccelAbsolute = Mathf.Abs(Acceleration.x);
+                    float yAxisAccelAbsolute = Mathf.Abs(Acceleration.y);
+                    float zAxisAccelAbsolute = Mathf.Abs(Acceleration.z);
 
                     #region mLocked else if absY > threshold
-                    if (!mLocked) {
+                    if (!Locked) {
 
 
                         // Zoom control
@@ -120,18 +136,18 @@ namespace Tahvohck_Mods.JPFariasUpdates
                                 FactorSpeedZoom * timeStep,
                                 MinSpeedLinear, MaxSpeedLinear);
                             float newHeight = Mathf.Clamp(
-                                mCurrentHeight + yAxisAccel * speed,
+                                CurrentHeight + yAxisAccel * speed,
                                 MIN_HEIGHT, MAX_HEIGHT);
 
                             // Constant is an upper bound on the camera elevation angle
                             // TODO: Quaternions instead?
                             if (transform.eulerAngles.x < 86f) {
-                                zAxisAccel += (mCurrentHeight - newHeight) / speed;
+                                zAxisAccel += (CurrentHeight - newHeight) / speed;
                                 zAxisAccelAbsolute = Mathf.Abs(zAxisAccel);
                             }
 
-                            mCurrentHeight = newHeight;
-                            mTargetHeight = mCurrentHeight;
+                            CurrentHeight = newHeight;
+                            TargetHeight = CurrentHeight;
                         }
 
                         // Forward movement
@@ -147,8 +163,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         }
 
                         // Rotation
-                        if (mRotationAcceleration > thresholdRotation ||
-                            mVerticalRotationAcceleration > thresholdRotation) {
+                        if (RotationAcceleration > thresholdRotation ||
+                            VerticalRotationAcceleration > thresholdRotation) {
                             // This is different from how JPF did it, as I'm trying to not alter the euler
                             // angles directly per Unity docs, doing it instead via a vector.
                             // Example for clamps: Euler.x is 50f
@@ -156,8 +172,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
                             // max clamp: 87 - 50 =>  37
                             float minClamp = MinRotationalElevation - transform.eulerAngles.x;
                             float maxClamp = MaxRotationalElevation - transform.eulerAngles.x;
-                            float xDelta = -(mVerticalRotationAcceleration * timeStep * FactorSpeedRotation);
-                            float yDelta = mRotationAcceleration * timeStep * FactorSpeedRotation;
+                            float xDelta = -(VerticalRotationAcceleration * timeStep * FactorSpeedRotation);
+                            float yDelta = RotationAcceleration * timeStep * FactorSpeedRotation;
 
                             // Constrain elevation adjustment
                             xDelta = Mathf.Clamp(xDelta, minClamp, maxClamp);
@@ -190,23 +206,23 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     #endregion
 
                     // Rotate around world
-                    if (Mathf.Abs(mAlternateRotationAcceleration) > thresholdRotation) {
+                    if (Mathf.Abs(AlternateRotationAcceleration) > thresholdRotation) {
                         Ray ray = new Ray(transform.position, transform.forward);
                         float dist;
                         if (GroundPlane.Raycast(ray, out dist)) {
                             transform.RotateAround(
                                 transform.position + transform.forward * dist,
                                 Vector3.up,
-                                mAlternateRotationAcceleration * timeStep * FactorSpeedRotation);
+                                AlternateRotationAcceleration * timeStep * FactorSpeedRotation);
                         }
                     }
 
                     // If we moved, set the correct height
-                    if (!mLocked && (
+                    if (!Locked && (
                         zAxisAccelAbsolute > thresholdMovementXZ ||
                         xAxisAccelAbsolute > thresholdMovementXZ ||
                         yAxisAccelAbsolute > thresholdMovementY)) {
-                        _Manager.placeOnFloor(mCurrentHeight);
+                        _Manager.placeOnFloor(CurrentHeight);
                     }
 
                     // Calc map center and distance
@@ -234,11 +250,11 @@ namespace Tahvohck_Mods.JPFariasUpdates
                 GameState gameState = GameManager.getInstance().getGameState();
 
                 // This only happens when placing a module and only if the current height is < 21
-                if (mTargetHeight != mCurrentHeight) {
+                if (TargetHeight != CurrentHeight) {
                     // TODO: Break 30f out into a constant?
-                    mCurrentHeight += Mathf.Sign(mTargetHeight - mCurrentHeight) * timeStep * 30f;
-                    if (Mathf.Abs(mCurrentHeight - mTargetHeight) < 0.5f) {
-                        mCurrentHeight = mTargetHeight;
+                    CurrentHeight += Mathf.Sign(TargetHeight - CurrentHeight) * timeStep * 30f;
+                    if (Mathf.Abs(CurrentHeight - TargetHeight) < 0.5f) {
+                        CurrentHeight = TargetHeight;
                     }
                 }
 
@@ -266,7 +282,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         }
 
                         // Size adjustment code (JPF called this zoom code)
-                        if (Mathf.Abs(mZoomAxis) > thresholdMovementXZ
+                        if (Mathf.Abs(ZoomAxis) > thresholdMovementXZ
                             || Math.Abs(axisCompositeZoom) > thresholdMovementXZ) {
                             // Adjust module size as needed IF the control keys are down.
                             if (ctrlButtonPressed) {
@@ -287,27 +303,27 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         IsPlacingModule = false;
                     }
 
-                    mAcceleration.x += axisCompositeLR * lateralMoveSpeed;
-                    mAcceleration.z += axisCompositeFB * lateralMoveSpeed;
+                    Acceleration.x += axisCompositeLR * lateralMoveSpeed;
+                    Acceleration.z += axisCompositeFB * lateralMoveSpeed;
 
                     if (!ctrlButtonPressed) {
-                        mAcceleration.y -= mZoomAxis * zoomAndRotationSpeed;
-                        mAcceleration.y -= axisCompositeZoom * zoomAndRotationSpeed;
+                        Acceleration.y -= ZoomAxis * zoomAndRotationSpeed;
+                        Acceleration.y -= axisCompositeZoom * zoomAndRotationSpeed;
                     }
 
-                    mAlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
+                    AlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
 
                     // Rotate with middle mouse button
                     // TODO: Can probably use a Vector2 here
                     if (Input.GetMouseButton(2)) {
-                        float mouseDeltaX = Input.mousePosition.x - mPreviousMouseX;
-                        float mouseDeltaY = Input.mousePosition.y - mPreviousMouseY;
+                        float mouseDeltaX = Input.mousePosition.x - PreviousMouseX;
+                        float mouseDeltaY = Input.mousePosition.y - PreviousMouseY;
 
                         if (Mathf.Abs(mouseDeltaX) != Mathf.Epsilon) {
-                            mRotationAcceleration += zoomAndRotationSpeed * mouseDeltaX * 0.1f;
+                            RotationAcceleration += zoomAndRotationSpeed * mouseDeltaX * 0.1f;
                         }
                         if (Mathf.Abs(mouseDeltaY) != Mathf.Epsilon) {
-                            mVerticalRotationAcceleration += zoomAndRotationSpeed * mouseDeltaY * 0.1f;
+                            VerticalRotationAcceleration += zoomAndRotationSpeed * mouseDeltaY * 0.1f;
                         }
                     }
 
@@ -315,24 +331,32 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     if (!Application.isEditor) {
                         float screenBorderWidth = Screen.height * 0.01f;
                         if (Input.mousePosition.x < screenBorderWidth) {
-                            mAcceleration.x -= lateralMoveSpeed;
+                            Acceleration.x -= lateralMoveSpeed;
                         } else if (Input.mousePosition.x > Screen.width - screenBorderWidth) {
-                            mAcceleration.x += lateralMoveSpeed;
+                            Acceleration.x += lateralMoveSpeed;
                         } else if (Input.mousePosition.y < screenBorderWidth) {
-                            mAcceleration.z -= lateralMoveSpeed;
+                            Acceleration.z -= lateralMoveSpeed;
                         } else if (Input.mousePosition.y > Screen.height - screenBorderWidth) {
-                            mAcceleration.z += lateralMoveSpeed;
+                            Acceleration.z += lateralMoveSpeed;
                         }
                     }
 
                     // Unlike JPF, I define a reusable function here because it reads better.
                     float clampSpeed = !Input.GetKey(KeyCode.LeftShift) ? 1f : 0.25f;
-                    Clamp(ref mAcceleration.x, lateralMoveSpeed);
-                    Clamp(ref mAcceleration.z, lateralMoveSpeed);
-                    Clamp(ref mAcceleration.y, zoomAndRotationSpeed);
-                    Clamp(ref mRotationAcceleration, zoomAndRotationSpeed);
-                    Clamp(ref mVerticalRotationAcceleration, zoomAndRotationSpeed);
-                    Clamp(ref mAlternateRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref Acceleration.x, lateralMoveSpeed);
+                    Clamp(ref Acceleration.z, lateralMoveSpeed);
+                    Clamp(ref Acceleration.y, zoomAndRotationSpeed);
+                    Clamp(ref RotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref VerticalRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref AlternateRotationAcceleration, zoomAndRotationSpeed);
+
+                    if (sign != Mathf.Sign(Acceleration.x)) {
+                        Debug.Log($"SIGN DID NOT MATCH: {sign}, {Acceleration.x.ToString("F3")}");
+                    }
+
+                    LogPollingData(timeStep, frameIndex,
+                        axisCompositeZoom, axisCompositeLR, axisCompositeFB,
+                        clampSpeed);
 
                     // Said reusable function
                     void Clamp(ref float num, float mult)
@@ -340,14 +364,14 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         num = Mathf.Clamp(num - num * mult, -clampSpeed, clampSpeed);
                     }
                 } else {
-                    mAcceleration = Vector3.zero;
-                    mRotationAcceleration = 0f;
-                    mVerticalRotationAcceleration = 0f;
+                    Acceleration = Vector3.zero;
+                    RotationAcceleration = 0f;
+                    VerticalRotationAcceleration = 0f;
                     mAlternateRotationAcceleration = 0f;
                 }
 
-                mPreviousMouseX = Input.mousePosition.x;
-                mPreviousMouseY = Input.mousePosition.y;
+                PreviousMouseX = Input.mousePosition.x;
+                PreviousMouseY = Input.mousePosition.y;
             }
         }
     }
