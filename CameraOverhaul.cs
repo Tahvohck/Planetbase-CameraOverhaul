@@ -246,12 +246,12 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     // Setup
                     KeyBindingManager bindingManager = KeyBindingManager.getInstance();
                     GameStateGame game = gameState as GameStateGame;
-                    float axisCompositeZoom = Mathf.Abs(bindingManager.getCompositeAxis(
-                        ActionType.CameraZoomOut, ActionType.CameraZoomIn));
-                    float axisCompositeLR = Mathf.Abs(bindingManager.getCompositeAxis(
-                        ActionType.CameraMoveLeft, ActionType.CameraMoveRight));
-                    float axisCompositeFB = Mathf.Abs(bindingManager.getCompositeAxis(
-                        ActionType.CameraMoveBack, ActionType.CameraMoveForward));
+                    float axisCompositeZoom = bindingManager.getCompositeAxis(
+                        ActionType.CameraZoomOut, ActionType.CameraZoomIn);
+                    float axisCompositeLR = bindingManager.getCompositeAxis(
+                        ActionType.CameraMoveLeft, ActionType.CameraMoveRight);
+                    float axisCompositeFB = bindingManager.getCompositeAxis(
+                        ActionType.CameraMoveBack, ActionType.CameraMoveForward);
                     bool ctrlButtonPressed =
                         Input.GetKey(KeyCode.LeftControl) &&
                         Input.GetKey(KeyCode.RightControl);
@@ -266,7 +266,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
                         // Size adjustment code (JPF called this zoom code)
                         if (Mathf.Abs(mZoomAxis) > thresholdMovementXZ
-                            || axisCompositeZoom > thresholdMovementXZ) {
+                            || Math.Abs(axisCompositeZoom) > thresholdMovementXZ) {
                             // Adjust module size as needed IF the control keys are down.
                             if (ctrlButtonPressed) {
                                 // This does not match JPF's code. In a way it's a bit more elegant, but in
