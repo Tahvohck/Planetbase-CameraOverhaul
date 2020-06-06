@@ -60,6 +60,8 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static readonly float MaxSpeedLinear = 100f;
         protected static readonly float FactorSpeedZoom = 60f;
         protected static readonly float FactorSpeedLateral = 80f;
+        protected static readonly float FactorSpeedLateralFU = 6f;
+        protected static readonly float FactorSpeedRotAndZoomFU = 10f;
         protected static readonly float FactorSpeedRotation = 120f;
         protected static readonly float MinRotationalElevation = 20f;
         protected static readonly float MaxRotationalElevation = 87f;
@@ -71,6 +73,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static float mTargetHeight;                   // TODO: Might not need this
         protected static float mRotationAcceleration;           // TODO: Get from somewhere
         protected static float mVerticalRotationAcceleration;   // TODO: Get from somewhere
+        protected static float mZoomAxis = 0f;                  // Only altered by Update and FixedUpdate
         protected static bool mLocked;                          // TODO: Get from somewhere
 
         public CustomCameraManager()
@@ -219,11 +222,44 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     }
                 }
             }
+
+            // TODO: Interpolation, will need reflection
         }
 
         public void fixedUpdate(float timeStep, int frameIndex)
         {
+            if (_Manager.getCinematic() is null) {
+                float lateralMoveSpeed = timeStep * FactorSpeedLateralFU;
+                float zoomAndRotationSpeed = timeStep * FactorSpeedRotAndZoomFU;
 
+                GameState gameState = GameManager.getInstance().getGameState();
+
+                // This only happens when placing a module and only if the current height is < 21
+                if (mTargetHeight != mCurrentHeight) {
+                    // TODO: Break 30f out into a constant?
+                    mCurrentHeight += Mathf.Sign(mTargetHeight - mCurrentHeight) * timeStep * 30f;
+                    if (Mathf.Abs(mCurrentHeight - mTargetHeight) < 0.5f) {
+                        mCurrentHeight = mTargetHeight;
+                    }
+                }
+
+                // Camera is unfixed and game isn't paused.
+                if (!(gameState?.isCameraFixed() ?? true) && TimeManager.getInstance().isPaused()) {
+                    KeyBindingManager bindingManager = KeyBindingManager.getInstance();
+                    GameStateGame game = gameState as GameStateGame;
+
+                    if (game.CurrentState() == GameStateHelper.Mode.PlacingModule) {
+                        if (!IsPlacingModule) {
+                            IsPlacingModule = true;
+                            // TODO: Get this, maybe. See above in update()
+                            // Modulesize = game.mCurrentModuleSize;
+                        }
+                    } else {
+                        // TODO: Maybe I don't need this. I should be able to trust the gamestate instead.
+                        IsPlacingModule = false;
+                    }
+                }
+            }
         }
     }
 
