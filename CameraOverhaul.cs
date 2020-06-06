@@ -242,7 +242,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                 }
 
                 // Camera is unfixed and game isn't paused.
-                if (!(gameState?.isCameraFixed() ?? true) && TimeManager.getInstance().isPaused()) {
+                if (!(gameState?.isCameraFixed() ?? true) && !TimeManager.getInstance().isPaused()) {
                     // Setup
                     KeyBindingManager bindingManager = KeyBindingManager.getInstance();
                     GameStateGame game = gameState as GameStateGame;
