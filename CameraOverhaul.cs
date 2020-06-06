@@ -33,6 +33,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         // Protected instead of private - Can be accessed by subclasses
         protected static float OrbitRotationAcceleration = 0f;
+        protected static GameObject SkydomeCamera;
 
         protected static Plane GroundPlane = new Plane(
             Vector3.up,
@@ -93,6 +94,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         public CustomCameraManager()
         {
             _Manager = CameraManager.getInstance();
+            SkydomeCamera = _Manager.GetSkyboxCamera();
         }
 
         public void update(float timeStep)
@@ -236,7 +238,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
             }
 
             // TODO: Interpolation, will need reflection
-            // TODO: Skydome rotation
+            SkydomeCamera.transform.rotation = _Manager.getCamera().transform.rotation;
         }
 
         public void fixedUpdate(float timeStep, int frameIndex)
