@@ -128,8 +128,6 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
                     #region mLocked else if absY > threshold
                     if (!Locked) {
-
-
                         // Zoom control
                         if (yAxisAccelAbsolute > thresholdMovementY) {
                             float speed = Mathf.Clamp(
