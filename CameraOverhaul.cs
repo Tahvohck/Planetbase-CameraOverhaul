@@ -314,14 +314,12 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     // Rotate with middle mouse button
                     // TODO: Can probably use a Vector2 here
                     if (Input.GetMouseButton(2)) {
-                        float mouseDeltaX = Input.mousePosition.x - PreviousMouseX;
-                        float mouseDeltaY = Input.mousePosition.y - PreviousMouseY;
+                        Vector2 deltaMouse = (Vector2)Input.mousePosition - PreviousMouse;
 
-                        if (Mathf.Abs(mouseDeltaX) != Mathf.Epsilon) {
-                            RotationAcceleration += zoomAndRotationSpeed * mouseDeltaX * 0.1f;
-                        }
-                        if (Mathf.Abs(mouseDeltaY) != Mathf.Epsilon) {
-                            VerticalRotationAcceleration += zoomAndRotationSpeed * mouseDeltaY * 0.1f;
+                        if (Mathf.Abs(deltaMouse.magnitude) > Mathf.Epsilon) {
+                            Vector2 adjustedDelta = deltaMouse * zoomAndRotationSpeed * 0.1f;
+                            RotationAcceleration = adjustedDelta.x;
+                            VerticalRotationAcceleration = adjustedDelta.y;
                         }
                     }
 
@@ -368,8 +366,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     OrbitRotationAcceleration = 0f;
                 }
 
-                PreviousMouseX = Input.mousePosition.x;
-                PreviousMouseY = Input.mousePosition.y;
+                PreviousMouse = Input.mousePosition;
             }
         }
     }
