@@ -32,7 +32,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         // Protected instead of private - Can be accessed by subclasses
         protected static float VerticalRotationAcceleration = 0f;
-        protected static float AlternateRotationAcceleration = 0f;
+        protected static float mAlternateRotationAcceleration = 0f;
 
         protected static Plane GroundPlane = new Plane(
             Vector3.up,
@@ -190,14 +190,14 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     #endregion
 
                     // Rotate around world
-                    if (Mathf.Abs(AlternateRotationAcceleration) > thresholdRotation) {
+                    if (Mathf.Abs(mAlternateRotationAcceleration) > thresholdRotation) {
                         Ray ray = new Ray(transform.position, transform.forward);
                         float dist;
                         if (GroundPlane.Raycast(ray, out dist)) {
                             transform.RotateAround(
                                 transform.position + transform.forward * dist,
                                 Vector3.up,
-                                AlternateRotationAcceleration * timeStep * FactorSpeedRotation);
+                                mAlternateRotationAcceleration * timeStep * FactorSpeedRotation);
                         }
                     }
 
@@ -294,7 +294,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                         mAcceleration.y -= axisCompositeZoom * zoomAndRotationSpeed;
                     }
 
-                    AlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
+                    mAlternateRotationAcceleration -= axisCompositeLR * zoomAndRotationSpeed;
 
                     // Rotate with middle mouse button
                     // TODO: Can probably use a Vector2 here
@@ -331,7 +331,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     Clamp(ref mAcceleration.y, zoomAndRotationSpeed);
                     Clamp(ref mRotationAcceleration, zoomAndRotationSpeed);
                     Clamp(ref mVerticalRotationAcceleration, zoomAndRotationSpeed);
-                    Clamp(ref AlternateRotationAcceleration, zoomAndRotationSpeed);
+                    Clamp(ref mAlternateRotationAcceleration, zoomAndRotationSpeed);
 
                     // Said reusable function
                     void Clamp(ref float num, float mult)
@@ -342,7 +342,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
                     mAcceleration = Vector3.zero;
                     mRotationAcceleration = 0f;
                     mVerticalRotationAcceleration = 0f;
-                    AlternateRotationAcceleration = 0f;
+                    mAlternateRotationAcceleration = 0f;
                 }
 
                 mPreviousMouseX = Input.mousePosition.x;
