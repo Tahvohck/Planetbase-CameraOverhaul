@@ -49,11 +49,6 @@ namespace Tahvohck_Mods.JPFariasUpdates
         public static float TGenTotalSize => _TGenTotalSize;
 
         // Lots of properties. I should sort these.
-        [Obsolete("Use PreviousMouse vector instead")]
-        protected static float PreviousMouseX { get => PreviousMouse.x; set => PreviousMouse.x = value; }
-        [Obsolete("Use PreviousMouse vector instead")]
-        protected static float PreviousMouseY { get => PreviousMouse.y; set => PreviousMouse.y = value; }
-
         protected static float CurrentHeight
         {
             get => _CurrentHeight;
