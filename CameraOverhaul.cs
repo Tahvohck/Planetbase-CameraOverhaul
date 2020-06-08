@@ -44,9 +44,6 @@ namespace Tahvohck_Mods.JPFariasUpdates
 
         private static CameraManager _Manager;
 
-        // Taken directly from the source code but then made into a public property.
-        protected const float _TGenTotalSize = 2000f;
-        public static float TGenTotalSize => _TGenTotalSize;
 
         // Lots of properties. I should sort these.
         protected static float CurrentHeight
@@ -75,6 +72,9 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static readonly float MinRotationalElevation = 20f;
         protected static readonly float MaxRotationalElevation = 87f;
         protected static readonly float MaxDistFromMapCenter = Mathf.Min(375f, TGenTotalSize / 2.0f);
+        // Taken directly from the source code but then made into a public property.
+        protected const float _TGenTotalSize = 2000f;
+        public static float TGenTotalSize => _TGenTotalSize;
 
         // Fields that are private in CameraManager (mild renaming)
         protected static Vector3 Acceleration = Vector3.zero;   // TODO: Update assignment
