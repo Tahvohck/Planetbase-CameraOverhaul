@@ -88,7 +88,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         protected static float RotationAcceleration;            // TODO: Get from somewhere
         protected static float VerticalRotationAcceleration;    // TODO: Get from somewhere
         protected static float ZoomAxis = 0f;                   // Only altered by Update and FixedUpdate
-        protected static bool Locked;                           // TODO: Get from somewhere
+        protected static bool Locked = false;                   // Handled by our Postfixes.
         #endregion
 
         public CustomCameraManager()
@@ -371,6 +371,11 @@ namespace Tahvohck_Mods.JPFariasUpdates
                 PreviousMouse = Input.mousePosition;
             }
         }
+
+        public void ChangeLock(bool newLockedStatus)
+        {
+            Locked = newLockedStatus;
+        }
     }
 
 
@@ -404,4 +409,36 @@ namespace Tahvohck_Mods.JPFariasUpdates
             return false;
         }
     }
+
+
+    #region Locks
+    [HarmonyPatch(typeof(CameraManager), "focusOnPosition")]
+    public class PatchFocus
+    {
+        public static void HarmonyPostfix()
+        {
+            CameraOverhaul.camera.ChangeLock(true);
+        }
+    }
+
+
+    [HarmonyPatch(typeof(CameraManager), "unfocus")]
+    public class PatchUnfocus
+    {
+        public static void HarmonyPostfix()
+        {
+            CameraOverhaul.camera.ChangeLock(false);
+        }
+    }
+
+
+    [HarmonyPatch(typeof(CameraManager), "onTitleScreen")]
+    public class PatchOnTitle
+    {
+        public static void HarmonyPostfix()
+        {
+            CameraOverhaul.camera.ChangeLock(false);
+        }
+    }
+    #endregion
 }
