@@ -13,6 +13,7 @@ namespace Tahvohck_Mods.JPFariasUpdates
         private readonly static Harmony harmInst = new Harmony(typeof(CameraOverhaul).FullName);
         public static CustomCameraManager camera;
 
+        [LoaderOptimization(LoaderOptimization.NotSpecified)]
         public static void Init()
         {
             try {
